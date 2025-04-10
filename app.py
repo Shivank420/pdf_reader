@@ -6,6 +6,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
+from dotenv import load_dotenv
 
 st.title("Ask Questions from PDF using LangChain RAG")
 
@@ -29,7 +30,7 @@ if pdf_file:
     docs = text_splitter.split_documents(documents)
 
     # --- Step 3: Create the Vector Store (Embeddings Under the Hood) ---
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
     vectorstore = FAISS.from_documents(docs, embeddings)
 
     # --- Step 4: Setup QA Retrieval Chain ---
