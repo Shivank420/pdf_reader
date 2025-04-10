@@ -1,0 +1,9 @@
+streamlit
+langchain
+PyPDF2
+openai
+faiss-cpu
+sentence-transformers
+PyMuPDF
+pypdf
+tiktoken
