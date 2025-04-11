@@ -59,3 +59,57 @@ if pdf_file:
             # If at least one retrieved chunk is sufficiently similar, run the QA chain.
             answer = qa_chain.run(question)
             st.write("Answer:", answer)
+            
+            # Show the retrieved chunks for manual inspection (relevancy review)
+            st.subheader("Retrieved Chunks for Relevancy Inspection:")
+            for doc, score in results_with_scores:
+                st.write("**Score:**", score)
+                st.write(doc.page_content)
+                st.write("---")
+
+    # --- Dynamic Evaluation Section ---
+    if st.sidebar.checkbox("Run Dynamic Evaluation"):
+        st.sidebar.markdown("### Dynamic Evaluation")
+        st.markdown("#### Generating Evaluation Queries Dynamically")
+
+        # Step 1: Generate evaluation queries from the document's content.
+        # We use a portion of the document (e.g., the first 1000 characters) as context.
+        sample_text = docs[0].page_content[:1000]
+        eval_prompt = (
+            "Based on the following text, generate three comprehensive evaluation questions "
+            "that cover the main aspects of this document. Ensure the questions capture key details "
+            "and context of the content:\n\n" + sample_text
+        )
+        # Use the language model to generate evaluation questions.
+        # (Note: The output is expected to be a list of questions separated by newlines.)
+        generated_eval = llm.predict(eval_prompt)
+        # Split the output into individual questions. (Assumes each question is on a new line.)
+        dynamic_questions = [q.strip() for q in generated_eval.split("\n") if q.strip()]
+        
+        st.markdown("#### Evaluation Questions Generated:")
+        for i, q in enumerate(dynamic_questions, start=1):
+            st.write(f"**Q{i}: {q}**")
+        
+        # Step 2: Run the QA chain for each evaluation question and collect user feedback.
+        st.markdown("#### Answer Evaluation and Feedback")
+        feedback_scores = []
+        for i, q in enumerate(dynamic_questions, start=1):
+            st.write(f"**Question {i}:** {q}")
+            eval_answer = qa_chain.run(q)
+            st.write("Generated Answer:", eval_answer)
+            # Ask user to provide a rating for the answer based on relevancy and context
+            rating = st.slider(
+                f"Rate the relevancy and contextual awareness for Q{i} (1 = Poor, 5 = Excellent)",
+                min_value=1,
+                max_value=5,
+                value=3,
+                key=f"rating_{i}"
+            )
+            feedback_scores.append(rating)
+            st.write("---")
+
+        if feedback_scores:
+            avg_rating = sum(feedback_scores) / len(feedback_scores)
+            st.markdown("### Dynamic Evaluation Summary")
+            st.write(f"Average Rating: {avg_rating:.2f} out of 5")
+            st.write("This score reflects overall performance based on your feedback.")
